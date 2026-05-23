@@ -41,10 +41,24 @@ router.post("/register", async (req, res) => {
   });
   await newUser.save();
 
-  const token = generateToken({ _id: newUser._id, name: newUser.name });
+  const { accessToken, refreshToken } = generateTokens({
+    _id: newUser._id,
+    name: newUser.name,
+  });
 
-  console.log(token);
-  res.status(201).json(token);
+  const newHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+  newUser.refreshToken = newHashedRefreshToken;
+  await newUser.save();
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: false, // TODO: Change this to true for prod
+    sameSite: "none",
+    // domain: 'api.backend.com',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  res.status(201).json(accessToken);
 });
 
 router.post("/login", async (req, res) => {
@@ -65,9 +79,24 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  const token = generateToken({ _id: user._id, name: user.name });
+  const { accessToken, refreshToken } = generateTokens({
+    _id: user._id,
+    name: user.name,
+  });
 
-  res.json(token);
+  const newHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+  user.refreshToken = newHashedRefreshToken;
+  await user.save();
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: false, // TODO: Change this to true for prod
+    sameSite: "none",
+    // domain: 'api.backend.com',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  res.json(accessToken);
 });
 
 router.get("/", authMiddleware, async (req, res) => {
@@ -75,12 +104,19 @@ router.get("/", authMiddleware, async (req, res) => {
   res.json(user);
 });
 
-const generateToken = (data) => {
-  return jwt.sign(
-    data,
-    process.env.JWT_SECRET_KEY,
-    { expiresIn: 2 * 60 * 60 * 1000 }, // or "2h" / "1d"
+const generateTokens = (data) => {
+  const accessToken = jwt.sign(data, process.env.ACCESS_TOKEN_KEY, {
+    expiresIn: "1d", // INFO: in production change this to "5m"
+  });
+  const refreshToken = jwt.sign(
+    { _id: data._id },
+    process.env.REFRESH_TOKEN_KEY,
+    {
+      expiresIn: "7d",
+    },
   );
+
+  return { accessToken, refreshToken };
 };
 
 module.exports = router;

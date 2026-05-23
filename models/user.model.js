@@ -1,3 +1,4 @@
+const { string } = require("joi");
 const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema({
@@ -8,9 +9,11 @@ const userSchema = mongoose.Schema({
     unique: true,
     lowercase: true,
   },
-  password: { type: String, required: true },
+  password: { type: String, required: false },
   role: { type: String, enum: ["user", "admin"], default: "user" },
   address: { type: String },
+  googleId: { type: String, unique: true },
+  refreshToken: { type: String },
 });
 
 const User = mongoose.model("User", userSchema);
