@@ -69,7 +69,7 @@ router.post(
   },
 );
 
-router.get("/", async (req, res) => {
+router.get("/", async (req, res, next) => {
   const page = Number(req.query.page) || 1;
   const perPage = Number(req.query.perPage) || 8;
 
