@@ -44,6 +44,7 @@ router.post("/register", async (req, res) => {
   const { accessToken, refreshToken } = generateTokens({
     _id: newUser._id,
     name: newUser.name,
+    role: newUser.role,
   });
 
   const newHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
@@ -82,6 +83,7 @@ router.post("/login", async (req, res) => {
   const { accessToken, refreshToken } = generateTokens({
     _id: user._id,
     name: user.name,
+    role: user.role,
   });
 
   const newHashedRefreshToken = await bcrypt.hash(refreshToken, 10);

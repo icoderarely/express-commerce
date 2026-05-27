@@ -2,6 +2,8 @@ const express = require("express");
 const multer = require("multer");
 const router = express.Router();
 const Category = require("../models/category.model");
+const authMiddleware = require("../middleware/auth.middleware");
+const checkRole = require("../middleware/checkRole.middleware");
 
 // we define how and where files should be stored on our server
 const storage = multer.diskStorage({
@@ -37,25 +39,31 @@ const upload = multer({
 
 // on frontend we need to use <input type="file" name="icon" />
 // file info in req.file and form data in req.body
-router.post("/", upload.single("icon"), async (req, res) => {
-  if (!req.body.name || !req.file) {
-    return res.status(400).json({ message: "name and icon is required" });
-  }
+router.post(
+  "/",
+  authMiddleware,
+  checkRole("admin"),
+  upload.single("icon"),
+  async (req, res) => {
+    if (!req.body.name || !req.file) {
+      return res.status(400).json({ message: "name and icon is required" });
+    }
 
-  console.log(req.file);
+    console.log(req.file);
 
-  const newCategory = new Category({
-    name: req.body.name,
-    icon: req.file.filename,
-  });
+    const newCategory = new Category({
+      name: req.body.name,
+      icon: req.file.filename,
+    });
 
-  await newCategory.save();
+    await newCategory.save();
 
-  res.status(201).json({
-    message: "category added succesfully",
-    category: newCategory,
-  });
-});
+    res.status(201).json({
+      message: "category added succesfully",
+      category: newCategory,
+    });
+  },
+);
 
 router.get("/", async (req, res) => {
   const categories = await Category.find().select("-__v");

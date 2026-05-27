@@ -10,7 +10,7 @@ const userSchema = mongoose.Schema({
     lowercase: true,
   },
   password: { type: String, required: false },
-  role: { type: String, enum: ["user", "admin"], default: "user" },
+  role: { type: String, enum: ["user", "seller", "admin"], default: "user" },
   address: { type: String },
   googleId: { type: String, unique: true },
   refreshToken: { type: String },

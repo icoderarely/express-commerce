@@ -43,6 +43,7 @@ router.get(
     const { accessToken, refreshToken } = generateTokens({
       _id: user._id,
       name: user.name,
+      role: user.role,
     });
 
     const newHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
@@ -86,6 +87,7 @@ router.post("/refresh", async (req, res) => {
   const { accessToken, refreshToken } = generateTokens({
     _id: user._id,
     name: user.name,
+    role: user.role,
   });
 
   const newHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
