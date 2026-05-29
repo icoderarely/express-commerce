@@ -4,6 +4,8 @@ const crypto = require("crypto");
 const authMiddleware = require("../middleware/auth.middleware");
 const Cart = require("../models/cart.model");
 const Order = require("../models/order.model");
+const checkRole = require("../middleware/checkRole.middleware");
+const { truncate } = require("fs");
 const router = express.Router();
 
 const fetchExchangeRate = async (baseCurrency, targetCurrency) => {
@@ -119,5 +121,36 @@ router.post("/paymentVerify", authMiddleware, async (req, res) => {
     message: "Payment verified successfully!",
   });
 });
+
+router.get("/", authMiddleware, async (req, res) => {
+  const orders = await Order.find({ user: req.user._id })
+    .sort({ createdAt: -1 })
+    .select("-user -shippingAddress -paymentId");
+
+  res.json(orders);
+});
+
+router.patch(
+  "/status/:orderId",
+  authMiddleware,
+  checkRole("admin"),
+  async (req, res) => {
+    const status = req.body.status;
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.orderId,
+      { orderStatus: status },
+      { new: true },
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found!" });
+    }
+
+    res.json({
+      message: "Order status updated succesfully",
+      updatedOrderStatus: updatedOrder.status,
+    });
+  },
+);
 
 module.exports = router;
