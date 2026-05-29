@@ -108,7 +108,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
 const generateTokens = (data) => {
   const accessToken = jwt.sign(data, process.env.ACCESS_TOKEN_KEY, {
-    expiresIn: "1d", // INFO: in production change this to "5m"
+    expiresIn: "10d", // INFO: in production change this to "5m"
   });
   const refreshToken = jwt.sign(
     { _id: data._id },

@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const winston = require("winston");
 const path = require("path");
+const cors = require("cors");
 const app = express();
 
 const userRoutes = require("./routes/user.routes");
@@ -14,6 +15,7 @@ const authRoutes = require("./routes/auth.routes");
 const categoryRoutes = require("./routes/category.routes");
 const productRoutes = require("./routes/product.routes");
 const cartRoutes = require("./routes/cart.routes");
+const orderRoutes = require("./routes/order.routes");
 
 const logger = winston.createLogger({
   level: "info",
@@ -68,6 +70,7 @@ mongoose
     logger.end();
   });
 
+app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
@@ -84,6 +87,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/order", orderRoutes);
 
 app.use((error, req, res, next) => {
   logger.info("Error Middleware is Running!");

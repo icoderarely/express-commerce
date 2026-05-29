@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RazorPay Testing</title>
+  </head>
+  <body>
+    <h1>Let's Test RazorPay Payment Gateway 🤩</h1>
+
+    <button id="btnPayment">Test Payment</button>
+  </body>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <script>
+    const orderEndpoint = "http://localhost:3000/api/order/checkout";
+    const verifyEndpoint = "http://localhost:3000/api/order/paymentVerify";
+
+    // Dummy User Data (Replace this with your data and token))
+    const shippingAddress = "This is my full address";
+    const userCurrency = "INR"; // Other currency for international payments - "USD", "EUR", "CAD" etc
+    const razorPayKeyId = "rzp_test_SvFagZpgq3DByi";
+    const token =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2YTEwMDVmM2NlNjQyMWVjNzY5ZWE4ZTAiLCJuYW1lIjoiSm9obiBEb2UiLCJyb2xlIjoic2VsbGVyIiwiaWF0IjoxNzgwMDc0Mjk4LCJleHAiOjE3ODA5MzgyOTh9.u6twBdohjpVa6BjD-ewSE_j0fAm505LtcEbYdWIxkzw";
+
+    //Handling the Test Payment Button Click Event
+    document
+      .getElementById("btnPayment")
+      .addEventListener("click", async (e) => {
+        e.preventDefault();
+        try {
+          // Step 1: Calling an Order API of backend for creating order
+          const order = await fetch(orderEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ shippingAddress, currency: userCurrency }),
+          });
+
+          const orderData = await order.json();
+          if (!orderData.success) {
+            alert("Failed to create Razorpay order");
+            return;
+          }
+
+          const { orderId, currency, amount } = orderData;
+
+          // Step 2: After order created successfully, we will open razorPay for User Payment
+          const razorpayOptions = {
+            key: razorPayKeyId,
+            amount: amount,
+            currency: currency,
+            name: "Your Business Name", // Your business name
+            description: "Testing RazorPay Payment", // Description for this payment
+            image: "", // Your business logo
+            order_id: orderId,
+            prefill: {
+              name: "Test User",
+              email: "testuser@example.com",
+              contact: "9999999999",
+            },
+            handler: async function (response) {
+              // Step 3: Calling Verification API when payment completed successfully
+              const verifyResponse = await fetch(verifyEndpoint, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  shippingAddress,
+                }),
+              });
+
+              const verifyData = await verifyResponse.json();
+
+              if (verifyData.success) {
+                alert("Payment successful! Order placed.");
+              } else {
+                alert("Payment verification failed!");
+              }
+            },
+          };
+
+          // Opening the razorpay with above options
+          const razorpay = new Razorpay(razorpayOptions);
+          razorpay.open();
+
+          // This will handle the payment failed scenario from Frontend(i.g. User enter wrong card deatils)
+          razorpay.on("payment.failed", function (response) {
+            alert("Payment failed!");
+            console.error(response.error);
+          });
+        } catch (error) {
+          console.log(error);
+          alert("Something went wrong!");
+        }
+      });
+  </script>
+</html>
